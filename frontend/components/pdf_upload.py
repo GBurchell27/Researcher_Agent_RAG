@@ -50,6 +50,12 @@ def render_pdf_upload():
                         # Get the response data
                         response_data = response.json()
                         
+                        # Store document ID in session state
+                        if 'document_id' in response_data:
+                            st.session_state['current_document_id'] = response_data['document_id']
+                            st.session_state['current_document_name'] = uploaded_file.name
+                            print(f"Set document ID: {response_data['document_id']}")
+                        
                         # Store document statistics in session state
                         if 'document_stats' not in st.session_state:
                             st.session_state['document_stats'] = {}

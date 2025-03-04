@@ -40,6 +40,10 @@ if 'document_stats' not in st.session_state:
     st.session_state['document_stats'] = {}
 if 'document_samples' not in st.session_state:
     st.session_state['document_samples'] = {}
+if 'current_document_id' not in st.session_state:
+    st.session_state['current_document_id'] = ""
+if 'current_document_name' not in st.session_state:
+    st.session_state['current_document_name'] = ""
 if 'api_status' not in st.session_state:
     st.session_state['api_status'] = "unknown"
 if 'api_response' not in st.session_state:

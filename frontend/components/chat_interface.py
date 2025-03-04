@@ -9,6 +9,12 @@ def render_chat_interface():
     """
     st.subheader("Chat with your documents")
     
+    # Display active document information
+    if st.session_state.get('current_document_id'):
+        st.info(f"Currently chatting with document: {st.session_state.get('current_document_name', 'Unknown')}")
+    else:
+        st.warning("No document selected. Please upload a document first.")
+    
     # Display chat container
     chat_container = st.container()
     
@@ -86,12 +92,16 @@ def render_chat_interface():
                     # Make API call to get the response
                     print(f"Sending query: {user_msg}")
                     
+                    # Get the current document ID
+                    document_id = st.session_state.get('current_document_id', '')
+                    
                     # Create the payload
                     payload = {
                         "query": user_msg,
-                        "document_id": st.session_state.get('current_document_id', '')
+                        "document_id": document_id
                     }
                     print(f"Payload: {payload}")
+                    print(f"Using document ID: {document_id}")
                     
                     response = requests.post(
                         f"{API_BASE_URL}/query",
