@@ -2,7 +2,7 @@
 import streamlit as st
 import requests
 import json
-from ui_components import render_chat_interface, render_pdf_upload
+from ui_components import render_chat_interface, render_pdf_upload, render_document_details
 
 # Page configuration
 st.set_page_config(
@@ -34,6 +34,10 @@ if 'uploaded_files' not in st.session_state:
     st.session_state['uploaded_files'] = []
 if 'user_input' not in st.session_state:
     st.session_state['user_input'] = ""
+if 'document_stats' not in st.session_state:
+    st.session_state['document_stats'] = {}
+if 'document_samples' not in st.session_state:
+    st.session_state['document_samples'] = {}
 if 'api_status' not in st.session_state:
     st.session_state['api_status'] = "unknown"
 if 'api_response' not in st.session_state:
@@ -86,11 +90,9 @@ def main():
         st.header("Document Management")
         render_pdf_upload()
         
-        # Display uploaded files (placeholder)
+        # Display uploaded files with details
         if st.session_state['uploaded_files']:
-            st.subheader("Uploaded Documents")
-            for file in st.session_state['uploaded_files']:
-                st.write(f"📄 {file}")
+            render_document_details()
         else:
             st.info("No documents uploaded yet. Upload a PDF to get started.")
         

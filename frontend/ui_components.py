@@ -43,7 +43,7 @@ def render_pdf_upload():
                     response = requests.post(
                         f"{API_BASE_URL}/upload",
                         files=files,
-                        timeout=10
+                        timeout=30  # Increased timeout for PDF processing
                     )
                     
                     # Handle the response
@@ -52,19 +52,53 @@ def render_pdf_upload():
                         if uploaded_file.name not in st.session_state['uploaded_files']:
                             st.session_state['uploaded_files'].append(uploaded_file.name)
                         
-                        # Display success message with response details
+                        # Get the response data
+                        response_data = response.json()
+                        
+                        # Store document statistics in session state
+                        if 'document_stats' not in st.session_state:
+                            st.session_state['document_stats'] = {}
+                        
+                        if 'statistics' in response_data:
+                            st.session_state['document_stats'][uploaded_file.name] = response_data['statistics']
+                        
+                        # Store sample chunks in session state
+                        if 'document_samples' not in st.session_state:
+                            st.session_state['document_samples'] = {}
+                        
+                        if 'sample_chunks' in response_data:
+                            st.session_state['document_samples'][uploaded_file.name] = response_data['sample_chunks']
+                        
+                        # Display success message
                         st.success(f"Document '{uploaded_file.name}' processed successfully!")
-                        try:
-                            response_data = response.json()
-                            st.json(response_data)
-                        except:
-                            st.write("Response received but not in JSON format.")
+                        
+                        # Display document statistics
+                        if 'statistics' in response_data:
+                            stats = response_data['statistics']
+                            st.subheader("Document Statistics")
+                            stats_col1, stats_col2 = st.columns(2)
+                            with stats_col1:
+                                st.metric("Pages", stats.get('total_pages', 0))
+                                st.metric("Text Chunks", stats.get('total_chunks', 0))
+                            with stats_col2:
+                                st.metric("Characters", f"{stats.get('total_characters', 0):,}")
+                                st.metric("Est. Tokens", f"{stats.get('estimated_tokens', 0):,}")
+                        
+                        # Display sample chunks
+                        if 'sample_chunks' in response_data and response_data['sample_chunks']:
+                            st.subheader("Sample Content")
+                            for idx, chunk in enumerate(response_data['sample_chunks']):
+                                with st.expander(f"Page {chunk.get('page', 'N/A')} - Preview {idx+1}"):
+                                    st.text(chunk.get('text_preview', 'No preview available'))
                     else:
                         # Error from the API
                         st.error(f"Error processing document: API returned status code {response.status_code}")
                         try:
                             response_data = response.json()
-                            st.json(response_data)
+                            if 'detail' in response_data:
+                                st.error(f"Error details: {response_data['detail']}")
+                            else:
+                                st.json(response_data)
                         except:
                             st.write(f"Error details: {response.text}")
                 
@@ -82,6 +116,44 @@ def render_pdf_upload():
                 except Exception as e:
                     # Other errors
                     st.error(f"⚠️ Error: {str(e)}")
+
+def render_document_details():
+    """
+    Render details about processed documents
+    """
+    if not st.session_state['uploaded_files']:
+        return
+    
+    st.subheader("Processed Documents")
+    
+    for doc_name in st.session_state['uploaded_files']:
+        with st.expander(f"📄 {doc_name}"):
+            # Show statistics if available
+            if 'document_stats' in st.session_state and doc_name in st.session_state['document_stats']:
+                stats = st.session_state['document_stats'][doc_name]
+                cols = st.columns(4)
+                cols[0].metric("Pages", stats.get('total_pages', 'N/A'))
+                cols[1].metric("Chunks", stats.get('total_chunks', 'N/A'))
+                cols[2].metric("Characters", f"{stats.get('total_characters', 0):,}")
+                cols[3].metric("Est. Tokens", f"{stats.get('estimated_tokens', 0):,}")
+            else:
+                st.info("No detailed statistics available for this document.")
+            
+            # Show sample chunks if available
+            if 'document_samples' in st.session_state and doc_name in st.session_state['document_samples']:
+                st.write("Content Samples:")
+                for idx, chunk in enumerate(st.session_state['document_samples'][doc_name]):
+                    with st.expander(f"Page {chunk.get('page', 'N/A')} - Preview {idx+1}"):
+                        st.text(chunk.get('text_preview', 'No preview available'))
+            
+            # Add a button to remove the document
+            if st.button(f"Remove Document", key=f"remove_{doc_name}"):
+                st.session_state['uploaded_files'].remove(doc_name)
+                if 'document_stats' in st.session_state and doc_name in st.session_state['document_stats']:
+                    del st.session_state['document_stats'][doc_name]
+                if 'document_samples' in st.session_state and doc_name in st.session_state['document_samples']:
+                    del st.session_state['document_samples'][doc_name]
+                st.experimental_rerun()
 
 def render_chat_interface():
     """
