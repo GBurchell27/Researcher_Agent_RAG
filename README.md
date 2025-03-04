@@ -10,7 +10,8 @@ A research assistant chat application that helps users upload and interact with 
 - Store document vectors in Pinecone
 - Query documents with natural language
 - Retrieve relevant context for user queries
-- Format responses with citations
+- Format responses with citations and source references
+- Classify query types for optimized responses
 
 ## Project Structure
 
@@ -20,8 +21,16 @@ A research assistant chat application that helps users upload and interact with 
   - `vector_store.py`: Pinecone vector database operations
   - `document_processor.py`: Document management and tracking
   - `query_handler.py`: Query processing and context retrieval
+  - `response_generator.py`: AI response generation with citations
   - `main.py`: FastAPI application and API endpoints
+  - `tests/`: Unit and integration tests
 - `frontend/`: Streamlit web interface
+  - `app.py`: Main Streamlit application
+  - `components/`: UI components
+    - `pdf_upload.py`: Document upload interface
+    - `chat_interface.py`: Chat UI for querying documents
+    - `document_details.py`: Document metadata display
+    - `document_preview.py`: Document preview functionality
 
 ## Setup Instructions
 
@@ -119,5 +128,21 @@ python -m unittest discover tests
 - ✅ Phase 1: Project Setup
 - ✅ Phase 2: PDF Upload & Text Extraction
 - ✅ Phase 3: Embeddings & Pinecone Integration
-- ⚙️ Phase 4: Query Handling & AI Response (in progress)
-- ⬜ Phase 5: Refine UI & Testing
+- ✅ Phase 4: Query Handling & AI Response
+- ✅ Phase 5: Frontend UI Implementation
+- ⚙️ Phase 6: End-to-End Testing & Refinement (in progress)
+- ⬜ Phase 7: Deployment & Documentation
+
+## Key Components
+
+### Backend
+- **Document Processing**: Handles PDF upload, text extraction, chunking, and metadata extraction
+- **Embedding Generation**: Creates vector representations of document chunks using OpenAI embeddings
+- **Vector Storage**: Manages storage and retrieval of document vectors in Pinecone
+- **Query Handling**: Processes user queries, retrieves relevant context, and assembles information
+- **Response Generation**: Creates structured AI responses with proper citations and source references
+
+### Frontend
+- **Document Upload**: Interface for uploading and processing PDF documents
+- **Chat Interface**: Conversational UI for querying documents and viewing responses
+- **Document Management**: Displays document details and allows document selection
