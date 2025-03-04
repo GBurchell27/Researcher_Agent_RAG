@@ -2,6 +2,11 @@
 
 import streamlit as st
 import io
+import requests
+import json
+
+# API configuration
+API_BASE_URL = "http://localhost:8000"
 
 def render_pdf_upload():
     """
@@ -28,19 +33,55 @@ def render_pdf_upload():
         
         # Process button for the PDF
         if st.button("Process Document", key="process_btn"):
-            # Placeholder for processing logic
+            # Process the PDF with the backend API
             with st.spinner("Processing document..."):
-                # In the future, this will send the document to the backend
-                # response = requests.post(
-                #     "http://localhost:8000/upload",
-                #     files={"file": uploaded_file}
-                # )
+                try:
+                    # Prepare the file for upload
+                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
+                    
+                    # Try to communicate with the backend API
+                    response = requests.post(
+                        f"{API_BASE_URL}/upload",
+                        files=files,
+                        timeout=10
+                    )
+                    
+                    # Handle the response
+                    if response.status_code == 200:
+                        # Success - add to session state
+                        if uploaded_file.name not in st.session_state['uploaded_files']:
+                            st.session_state['uploaded_files'].append(uploaded_file.name)
+                        
+                        # Display success message with response details
+                        st.success(f"Document '{uploaded_file.name}' processed successfully!")
+                        try:
+                            response_data = response.json()
+                            st.json(response_data)
+                        except:
+                            st.write("Response received but not in JSON format.")
+                    else:
+                        # Error from the API
+                        st.error(f"Error processing document: API returned status code {response.status_code}")
+                        try:
+                            response_data = response.json()
+                            st.json(response_data)
+                        except:
+                            st.write(f"Error details: {response.text}")
                 
-                # For now, just add to session state
-                if uploaded_file.name not in st.session_state['uploaded_files']:
-                    st.session_state['uploaded_files'].append(uploaded_file.name)
-                
-                st.success(f"Document '{uploaded_file.name}' processed successfully!")
+                except requests.exceptions.ConnectionError:
+                    # Connection error (API not available)
+                    st.error("⚠️ Could not connect to the backend API (connection refused)")
+                    st.info("Adding document to local state for testing purposes.")
+                    
+                    # For testing: still add to session state even if API fails
+                    if uploaded_file.name not in st.session_state['uploaded_files']:
+                        st.session_state['uploaded_files'].append(uploaded_file.name)
+                    
+                    st.success(f"Document '{uploaded_file.name}' added to local state (test mode).")
+                    
+                except Exception as e:
+                    # Other errors
+                    st.error(f"⚠️ Error: {str(e)}")
 
 def render_chat_interface():
     """
@@ -119,17 +160,36 @@ def render_chat_interface():
             # Clear input field
             st.session_state['user_input'] = ""
             
-            # Placeholder for actual AI response
+            # Attempt to get response from API
             with st.spinner("Thinking..."):
-                # In the future, this will make an API call to get an AI response
-                # response = requests.post(
-                #     "http://localhost:8000/query",
-                #     json={"query": user_msg}
-                # )
-                # ai_response = response.json()["response"]
+                try:
+                    # Make API call to get the response
+                    response = requests.post(
+                        f"{API_BASE_URL}/query",
+                        json={"query": user_msg},
+                        timeout=10
+                    )
+                    
+                    if response.status_code == 200:
+                        # Success - extract the response
+                        try:
+                            response_data = response.json()
+                            ai_response = response_data.get("response", "No response field found in API response.")
+                        except:
+                            ai_response = "Received response but couldn't parse JSON."
+                    else:
+                        # Error from the API
+                        ai_response = f"Error from API: Status code {response.status_code}"
                 
-                # For now, use a placeholder response
-                ai_response = f"This is a placeholder response to your question: '{user_msg}'. In a real implementation, I would search through the document for relevant information and generate a meaningful answer based on the content."
+                except requests.exceptions.ConnectionError:
+                    # Connection error (API not available)
+                    ai_response = """⚠️ Could not connect to the backend API. 
+                    
+This is a placeholder response since the API is not available. In a real implementation, I would search through the document for relevant information and generate a meaningful answer based on the content."""
+                
+                except Exception as e:
+                    # Other errors
+                    ai_response = f"⚠️ Error: {str(e)}"
             
             # Add AI response to chat history
             st.session_state['chat_history'].append({
