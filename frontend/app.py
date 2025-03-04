@@ -2,7 +2,9 @@
 import streamlit as st
 import requests
 import json
-from ui_components import render_chat_interface, render_pdf_upload, render_document_details
+from components import render_pdf_upload, render_document_details, render_chat_interface
+
+API_BASE_URL = "http://localhost:8000"
 
 # Page configuration
 st.set_page_config(
