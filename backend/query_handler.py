@@ -5,6 +5,7 @@ This handles:
 2. Similarity search to retrieve relevant chunks
 3. Context assembly to combine retrieved chunks
 4. Relevance filtering to exclude low-similarity results
+5. Response generation with Pydantic AI (NEW)
 """
 
 import os
@@ -17,6 +18,7 @@ from collections import defaultdict
 from embeddings import get_embedding
 from vector_store import VectorStore
 from pdf_processing import TextChunk
+from response_generator import generate_response, response_generator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -27,7 +29,7 @@ MIN_SIMILARITY_THRESHOLD = 0.7  # Minimum similarity score to consider a chunk r
 
 
 class QueryProcessor:
-    """Handles query processing and context retrieval."""
+    """Handles query processing, context retrieval, and response generation."""
     
     def __init__(self, vector_store: Optional[VectorStore] = None):
         """
@@ -44,7 +46,7 @@ class QueryProcessor:
     
     def process_query(self, query_text: str, document_id: str, top_k: int = 5) -> Dict[str, Any]:
         """
-        Process a query against a specific document.
+        Process a query against a specific document and generate a response.
         
         Args:
             query_text: The user's query
@@ -52,7 +54,7 @@ class QueryProcessor:
             top_k: Number of top results to retrieve
             
         Returns:
-            Dict containing query results and processed context
+            Dict containing query results, processed context, and generated response
         """
         # Start timing the processing
         start_time = time.time()
@@ -82,7 +84,28 @@ class QueryProcessor:
         # Combine the retrieved chunks into a coherent context
         context = self._assemble_context(filtered_results[:top_k])
         
-        # Calculate processing time
+        # Generate a structured response using Pydantic AI
+        logger.info(f"Generating response for query: {query_text}")
+        response_generation_time = time.time()
+        
+        if filtered_results:
+            structured_response = generate_response(
+                query=query_text,
+                context=context,
+                results=filtered_results[:top_k],
+                document_id=document_id
+            )
+        else:
+            # Use fallback if no results were found
+            structured_response = response_generator.generate_fallback_response(
+                query=query_text
+            ).model_dump()
+            structured_response["generated_at"] = structured_response["generated_at"].isoformat()
+            structured_response["formatted_answer"] = "I couldn't find relevant information in the document to answer your question. Please try rephrasing or asking something covered in the document."
+        
+        response_duration = time.time() - response_generation_time
+        
+        # Calculate total processing time
         processing_time = time.time() - start_time
         
         # Prepare the response
@@ -94,6 +117,8 @@ class QueryProcessor:
             "context": context,
             "processing_time_ms": round(processing_time * 1000),
             "search_time_ms": round(search_duration * 1000),
+            "response_time_ms": round(response_duration * 1000),
+            "response": structured_response
         }
         
         return response
@@ -187,6 +212,6 @@ def process_query(query_text: str, document_id: str, top_k: int = 5) -> Dict[str
         top_k: Number of top results to retrieve
         
     Returns:
-        Dict containing query results and processed context
+        Dict containing query results, processed context, and generated response
     """
     return query_processor.process_query(query_text, document_id, top_k)

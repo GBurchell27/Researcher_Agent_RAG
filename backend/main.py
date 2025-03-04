@@ -7,14 +7,21 @@ from typing import Dict, Any, List, Optional
 import json
 import tempfile
 import uuid
+import logging
+from pydantic import BaseModel
 
 # Import our modules
 from pdf_processing import process_pdf_bytes, PDFProcessor
 from document_processor import document_processor, process_document
 from query_handler import process_query
+from response_generator import generate_response, response_generator
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("main")
 
 # Create FastAPI app
 app = FastAPI(
@@ -31,6 +38,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add this model definition before your endpoint
+class QueryRequest(BaseModel):
+    """Request model for document queries"""
+    query: str
+    document_id: str
+    top_k: int = 5
 
 @app.get("/")
 async def root():
@@ -65,32 +79,40 @@ async def upload_file(file: UploadFile = File(...), session_id: Optional[str] = 
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 
 @app.post("/query")
-async def process_user_query(query_data: Dict[str, Any] = Body(...)):
+async def query_document(query_request: QueryRequest):
     """
-    Endpoint for processing a query and returning a response
+    Process a query against a document and return results.
     """
-    # Extract the query and document_id
-    if "query" not in query_data:
-        raise HTTPException(status_code=400, detail="Query field is required")
-    
-    if "document_id" not in query_data:
-        raise HTTPException(status_code=400, detail="Document ID field is required")
-    
-    query = query_data["query"]
-    document_id = query_data["document_id"]
-    top_k = query_data.get("top_k", 5)
-    
     try:
-        # Query the document using our new query processor
-        results = process_query(query, document_id, top_k)
+        # Process the query
+        results = process_query(
+            query_text=query_request.query,
+            document_id=query_request.document_id,
+            top_k=query_request.top_k
+        )
         
-        # Return the results
-        return results
-    
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        # Extract the formatted answer for the frontend
+        if "response" in results and "formatted_answer" in results["response"]:
+            formatted_answer = results["response"]["formatted_answer"]
+        else:
+            formatted_answer = "No response was generated. Please try a different query."
+        
+        # Return query results and the formatted answer
+        return {
+            "success": True,
+            "query": query_request.query,
+            "document_id": query_request.document_id,
+            "result_count": results.get("result_count", 0),
+            "processing_time_ms": results.get("processing_time_ms", 0),
+            "response": formatted_answer,
+            "detailed_response": results.get("response", {})
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
+        logger.error(f"Error processing query: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 @app.get("/documents/{session_id}")
 async def get_session_documents(session_id: str):

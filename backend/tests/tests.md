@@ -24,3 +24,4 @@ python -m tests.test_query_processor_combined --document_id YOUR_DOC_ID --query 
 
 
 # TEST 4.2 Response Generation with Pydantic AI
+python backend/tests/test_response_generator.py

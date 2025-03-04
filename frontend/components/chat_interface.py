@@ -84,11 +84,24 @@ def render_chat_interface():
             with st.spinner("Thinking..."):
                 try:
                     # Make API call to get the response
+                    print(f"Sending query: {user_msg}")
+                    
+                    # Create the payload
+                    payload = {
+                        "query": user_msg,
+                        "document_id": st.session_state.get('current_document_id', '')
+                    }
+                    print(f"Payload: {payload}")
+                    
                     response = requests.post(
                         f"{API_BASE_URL}/query",
-                        json={"query": user_msg},
+                        json=payload,
                         timeout=10
                     )
+                    
+                    print(f"Response status: {response.status_code}")
+                    if response.status_code != 200:
+                        print(f"Error response: {response.text}")
                     
                     if response.status_code == 200:
                         # Success - extract the response
@@ -118,4 +131,4 @@ This is a placeholder response since the API is not available. In a real impleme
             })
             
             # Rerun to show the updated chat
-            st.experimental_rerun()
+            st.rerun()
