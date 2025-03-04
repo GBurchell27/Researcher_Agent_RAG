@@ -14,7 +14,7 @@ import openai
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from .pdf_processing import TextChunk
+from pdf_processing import TextChunk
 
 # Load environment variables
 load_dotenv()
