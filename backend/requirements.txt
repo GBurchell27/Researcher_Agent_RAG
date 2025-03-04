@@ -1,0 +1,24 @@
+python-dotenv
+fastapi
+uvicorn
+pydantic
+httpx
+
+# PDF Processing
+PyMuPDF
+
+# AI and Embeddings
+openai
+pydantic-ai
+
+# Vector Database
+pinecone-client
+
+# Streamlit Frontend
+streamlit
+
+# Utilities
+numpy
+python-multipart
+langchain
+tiktoken 
