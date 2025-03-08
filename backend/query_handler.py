@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("query_handler")
 
 # Configuration
-MIN_SIMILARITY_THRESHOLD = 0.7  # Minimum similarity score to consider a chunk relevant
+MIN_SIMILARITY_THRESHOLD = 0.5  # Minimum similarity score to consider a chunk relevant
 
 
 class QueryProcessor:
