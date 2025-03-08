@@ -68,7 +68,7 @@ class QueryProcessor:
         
         # Query the vector store
         logger.info(f"Querying document {document_id} with: {query_text}")
-        top_k_retrieval = max(top_k * 2, 10)  # Retrieve more results than needed for filtering
+        top_k_retrieval = max(top_k * 3, 15)  # Retrieve more results than needed for filtering
         similarity_search_time = time.time()
         results = self.vector_store.query(
             query_text=query_text,
