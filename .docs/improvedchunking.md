@@ -49,9 +49,9 @@ CHUNK_OVERLAP=150
 
 Smaller chunks with higher relative overlap can help capture more context while still being specific enough for retrieval.
 
-## Phase 2: Moderate Changes
+## ✅Phase 2: Moderate Changes
 
-### 4. Basic Query Expansion
+### ✅4. Basic Query Expansion
 
 Add this simple method to `query_handler.py`:
 
@@ -108,7 +108,7 @@ def process_query(self, query_text: str, document_id: str, top_k: int = 5) -> Di
     # ... rest of the method
 ```
 
-### 5. Enhanced Text Cleaning
+### ✅5. Enhanced Text Cleaning
 
 Improve the existing `clean_text` method in `pdf_processing.py`:
 

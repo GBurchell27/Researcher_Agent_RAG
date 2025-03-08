@@ -70,16 +70,33 @@ class QueryProcessor:
         logger.info(f"Querying document {document_id} with: {query_text}")
         top_k_retrieval = max(top_k * 3, 15)  # Retrieve more results than needed for filtering
         similarity_search_time = time.time()
-        results = self.vector_store.query(
-            query_text=query_text,
-            namespace=namespace,
-            top_k=top_k_retrieval,
-            include_metadata=True
-        )
+        
+        # Use query expansion
+        queries = self._expand_query(query_text)
+        all_results = []
+        
+        # Query for each expanded query
+        for query in queries:
+            results = self.vector_store.query(
+                query_text=query,
+                namespace=namespace,
+                top_k=top_k_retrieval,
+                include_metadata=True
+            )
+            all_results.extend(results)
+        
+        # Deduplicate results
+        unique_results = []
+        seen_ids = set()
+        for result in all_results:
+            if result["id"] not in seen_ids:
+                unique_results.append(result)
+                seen_ids.add(result["id"])
+        
         search_duration = time.time() - similarity_search_time
         
         # Apply relevance filtering
-        filtered_results = self._filter_results_by_relevance(results)
+        filtered_results = self._filter_results_by_relevance(unique_results)
         
         # Combine the retrieved chunks into a coherent context
         context = self._assemble_context(filtered_results[:top_k])
@@ -196,6 +213,24 @@ class QueryProcessor:
         
         # Join all parts with newlines between different sections
         return "\n\n".join(context_parts)
+
+    def _expand_query(self, query_text: str) -> List[str]:
+        """Simple query expansion to improve retrieval."""
+        expanded_queries = [query_text]  # Start with original query
+        
+        # Remove question words and punctuation for a more direct query
+        clean_query = query_text.strip()
+        if clean_query.endswith("?"):
+            clean_query = clean_query[:-1]
+        
+        for prefix in ["what is", "who is", "how does", "where is", "when did", "why does"]:
+            if clean_query.lower().startswith(prefix):
+                # Remove the question prefix to create a more direct statement
+                statement_query = clean_query[len(prefix):].strip()
+                expanded_queries.append(statement_query)
+                break
+        
+        return expanded_queries
 
 
 # Create a singleton instance

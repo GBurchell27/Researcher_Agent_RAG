@@ -134,6 +134,12 @@ class PDFProcessor:
         # Remove form feed characters
         text = text.replace('\f', '')
         
+        # Fix hyphenated words that may have been split across lines
+        text = re.sub(r'(\w+)-\n(\w+)', r'\1\2', text)
+        
+        # Normalize whitespace around punctuation
+        text = re.sub(r'\s+([.,;:!?])', r'\1', text)
+        
         # Trim whitespace
         text = text.strip()
         
