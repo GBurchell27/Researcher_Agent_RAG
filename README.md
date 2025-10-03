@@ -37,6 +37,8 @@ A research assistant chat application that helps users upload and interact with 
 1. Clone the repository
 2. Create a `.env` file based on the `.env.template` with your API keys:
    ```
+   PORT=8000
+   DEBUG=True
    OPENAI_API_KEY=your_openai_api_key
    PINECONE_API_KEY=your_pinecone_api_key
    PINECONE_ENVIRONMENT=your_pinecone_environment

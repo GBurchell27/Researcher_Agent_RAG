@@ -3,10 +3,15 @@ fastapi
 uvicorn
 pydantic
 httpx
+tqdm
+backoff
+
+# for caching
+diskcache
 
 # PDF Processing
 PyMuPDF
-
+nltk
 # AI and Embeddings
 openai
 pydantic-ai
@@ -22,3 +27,10 @@ numpy
 python-multipart
 langchain
 tiktoken 
+
+# Testing
+pytest>=7.4.0
+pytest-mock>=3.11.0
+
+# Pinecone for vector database (to be implemented)
+pinecone-client>=2.2.4 
